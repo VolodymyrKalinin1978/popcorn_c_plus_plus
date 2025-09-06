@@ -1,4 +1,4 @@
-// Popcorn.cpp : Defines the entry point for the application.
+п»ї// Popcorn.cpp : Defines the entry point for the application.
 //
 #include "iostream"
 #include "framework.h"
@@ -116,7 +116,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return TRUE;
 }
 //-------------------------------------------------------------------------------------------------------------------------
-// Відмалювання екрану гри
+// Р’С–РґРјР°Р»СЋРІР°РЅРЅСЏ РµРєСЂР°РЅСѓ РіСЂРё
 void Draw_frame(HDC hdc)
 {
 
