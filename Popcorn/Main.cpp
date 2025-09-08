@@ -10,7 +10,31 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+const int Global_Scale = 3;
+const int Brick_Width = 15;
+const int Brick_Height = 7;
+const int Cell_Width = 16;
+const int Cell_Height = 8;
+const int Level_X_Offset = 8;
+const int Level_Y_Offset = 6;
 
+char Level_01[14][12] =
+{
+   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -116,11 +140,48 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return TRUE;
 }
 //-------------------------------------------------------------------------------------------------------------------------
-// Відмалювання екрану гри
-void Draw_frame(HDC hdc)
+// Відмалювання цеглинки у  грі
+void Draw_Brick(HDC hdc, int x, int y, char brick_color)
 {
 
-};
+   HPEN pen;
+   HBRUSH brush;
+
+   switch (brick_color)
+   {
+      case 0:
+         return;
+
+      case 1:
+         pen = CreatePen(PS_SOLID, 0, RGB(255, 85, 255));
+         brush = CreateSolidBrush(RGB(255, 85, 255));
+         break;
+
+      case 2:
+         pen = CreatePen(PS_SOLID, 0, RGB(85, 255, 255));
+         brush = CreateSolidBrush(RGB(85, 255, 255));
+         break;
+
+      default:
+        return;
+   }
+
+   SelectObject(hdc, pen);
+   SelectObject(hdc, brush);
+
+   Rectangle(hdc, x * Global_Scale, y * Global_Scale, (x + Brick_Width) * Global_Scale, (y + Brick_Height) * Global_Scale);
+}
+//-------------------------------------------------------------------------------------------------------------------------
+// Відмалювання екрану гри
+void Draw_Frame(HDC hdc)
+{
+
+   int i, j;
+
+   for (i = 0; i < 14; i++)
+      for (j = 0; j < 12; j++)
+         Draw_Brick(hdc, Level_X_Offset + j * Cell_Width, Level_Y_Offset + i * Cell_Height, Level_01[i][j]);
+}
 //-------------------------------------------------------------------------------------------------------------------------
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -158,7 +219,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
 
-            Draw_frame(hdc);
+            Draw_Frame(hdc);
 
             EndPaint(hWnd, &ps);
         }
