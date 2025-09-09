@@ -10,31 +10,9 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-const int Global_Scale = 3;
-const int Brick_Width = 15;
-const int Brick_Height = 7;
-const int Cell_Width = 16;
-const int Cell_Height = 8;
-const int Level_X_Offset = 8;
-const int Level_Y_Offset = 6;
 
-char Level_01[14][12] =
-{
-   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
+const int Global_Scale = 4;
+
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -95,7 +73,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_POPCORN));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = CreateSolidBrush(RGB(0,0,0));
+    wcex.hbrBackground  = CreateSolidBrush(RGB(15,63,31));
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_POPCORN);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -112,17 +90,19 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
+//-------------------------------------------------------------------------------------------------------------------------
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
+   Init();
 
    RECT window_rect;
       
    window_rect.left = 0;
    window_rect.top = 0;
-   window_rect.right = 320 * 3;
-   window_rect.bottom = 200 * 3;
+   window_rect.right = 320 * Global_Scale;
+   window_rect.bottom = 200 * Global_Scale;
 
     AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, TRUE);
 
@@ -138,49 +118,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    UpdateWindow(hWnd);
 
       return TRUE;
-}
-//-------------------------------------------------------------------------------------------------------------------------
-// Відмалювання цеглинки у  грі
-void Draw_Brick(HDC hdc, int x, int y, char brick_color)
-{
-
-   HPEN pen;
-   HBRUSH brush;
-
-   switch (brick_color)
-   {
-      case 0:
-         return;
-
-      case 1:
-         pen = CreatePen(PS_SOLID, 0, RGB(255, 85, 255));
-         brush = CreateSolidBrush(RGB(255, 85, 255));
-         break;
-
-      case 2:
-         pen = CreatePen(PS_SOLID, 0, RGB(85, 255, 255));
-         brush = CreateSolidBrush(RGB(85, 255, 255));
-         break;
-
-      default:
-        return;
-   }
-
-   SelectObject(hdc, pen);
-   SelectObject(hdc, brush);
-
-   Rectangle(hdc, x * Global_Scale, y * Global_Scale, (x + Brick_Width) * Global_Scale, (y + Brick_Height) * Global_Scale);
-}
-//-------------------------------------------------------------------------------------------------------------------------
-// Відмалювання екрану гри
-void Draw_Frame(HDC hdc)
-{
-
-   int i, j;
-
-   for (i = 0; i < 14; i++)
-      for (j = 0; j < 12; j++)
-         Draw_Brick(hdc, Level_X_Offset + j * Cell_Width, Level_Y_Offset + i * Cell_Height, Level_01[i][j]);
 }
 //-------------------------------------------------------------------------------------------------------------------------
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
