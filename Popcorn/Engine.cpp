@@ -1,4 +1,13 @@
 #include "Engine.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+enum ELetter_Type
+{
+   ELT_None,
+
+   ELT_O
+};
 
 enum EBrick_type
 {
@@ -7,10 +16,10 @@ enum EBrick_type
    EBT_Blue
 };
 
-HPEN  Brick_Red_Pen, Brick_Blue_Pen, Platform_Circle_Pen, Platform_Inner_Pen, High_Light_Pen;
+HPEN  Brick_Red_Pen, Brick_Blue_Pen, Platform_Circle_Pen, Platform_Inner_Pen, High_Light_Pen, Letter_Pen;
 HBRUSH Brick_Red_Brush, Brick_Blue_Brush, Platform_Circle_Brush, Platform_Inner_Brush ;
 
-const int Global_Scale = 4;
+const int Global_Scale = 3;// Глобальна змінна маштабування гри
 const int Brick_Width = 15;
 const int Brick_Height = 7;
 const int Cell_Width = 16;
@@ -89,6 +98,129 @@ void Draw_Brick(HDC hdc, int x, int y, EBrick_type brick_color)
    RoundRect(hdc, x * Global_Scale, y * Global_Scale, (x + Brick_Width) * Global_Scale, (y + Brick_Height) * Global_Scale, 2 * Global_Scale, 2 * Global_Scale);
 }
 //-------------------------------------------------------------------------------------------------------------------------
+// Встановлення кольору цегли
+void Set_Brick_Letter_Color(bool is_switch_color, HPEN &front_pen, HBRUSH &front_brush, HPEN &back_pen, HBRUSH &back_brush)
+{
+   if (is_switch_color)
+   {
+      front_pen = Brick_Red_Pen;
+      front_brush = Brick_Red_Brush;
+
+      back_pen = Brick_Blue_Pen;
+      back_brush = Brick_Blue_Brush;
+   }
+   else
+   {
+      front_pen = Brick_Blue_Pen;
+      front_brush = Brick_Blue_Brush;
+
+      back_pen = Brick_Red_Pen;
+      back_brush = Brick_Red_Brush;
+   }
+
+}
+//-------------------------------------------------------------------------------------------------------------------------
+// Відмалювання падаючої букви
+void Draw_Brick_Letter(HDC hdc,int x, int y, EBrick_type brick_type, ELetter_Type letter_type, int rotation_step)
+{
+   bool switch_color;
+   double offset;
+   double rotation_angle;// Перетворення кроку у кут повороту
+   int brick_half_heght = (Brick_Height * Global_Scale / 2);
+   int beck_part_offset;
+   HPEN front_pen, back_pen;
+   HBRUSH front_brush, back_brush;
+   XFORM xForm, Old_xForm;
+
+   if (!(brick_type == EBT_Blue || brick_type == EBT_Red))
+      return;
+
+   //  Коректуєм крок оберту і кута повороту
+   rotation_step = rotation_step % 16;
+
+   if(rotation_step < 8)
+       rotation_angle = 2.0 * M_PI / 16.0 * (double)rotation_step;
+   else
+       rotation_angle = 2.0 * M_PI / 16.0 * (double)(8 - rotation_step);
+
+
+   if (rotation_step > 4 && rotation_step <= 12)
+   {
+      if (brick_type == EBT_Blue)
+         switch_color = true;
+        else
+         switch_color = false;
+   }
+   else 
+   {
+      if (brick_type == EBT_Red)
+         switch_color = true;
+       else
+         switch_color = false;
+   }
+
+   Set_Brick_Letter_Color(switch_color, front_pen, front_brush, back_pen, back_brush);
+
+   if (rotation_step == 4 || rotation_step == 12)
+   {
+      // Виводими фон
+      SelectObject(hdc, back_pen);
+      SelectObject(hdc, back_brush);
+
+      Rectangle(hdc, x, y + brick_half_heght - Global_Scale,x + Brick_Width * Global_Scale,y + brick_half_heght);
+
+      // Вивотими передній план
+      SelectObject(hdc, front_pen);
+      SelectObject(hdc, front_brush);
+
+      Rectangle(hdc, x, y + brick_half_heght, x + Brick_Width * Global_Scale, y + brick_half_heght + Global_Scale - 1);
+   }
+   else
+   {
+
+      SetGraphicsMode(hdc, GM_ADVANCED);
+
+      // Налаштування матриці перевороту букви 
+      xForm.eM11 = 1.0f; 
+      xForm.eM12 = 0.0f; 
+      xForm.eM21 = 0.0f; 
+      xForm.eM22 = (float)cos(rotation_angle); 
+      xForm.eDx  = (float)x; 
+      xForm.eDy  = (float)y + (float)brick_half_heght; 
+      GetWorldTransform(hdc, &Old_xForm);
+      SetWorldTransform(hdc, &xForm);
+
+      offset = 3.0 * (1.0 - fabs(xForm.eM22)) * (double)Global_Scale;
+      beck_part_offset = (int)round(offset);
+      // Виводими фон
+      SelectObject(hdc, back_pen);
+      SelectObject(hdc, back_brush);
+
+      Rectangle(hdc, 0, -brick_half_heght - beck_part_offset, Brick_Width * Global_Scale, brick_half_heght - beck_part_offset);
+
+      // Вивотими передній план
+      SelectObject(hdc, front_pen);
+      SelectObject(hdc, front_brush);
+
+      Rectangle(hdc, 0, -brick_half_heght, Brick_Width * Global_Scale, brick_half_heght);
+
+      if (rotation_step > 4 && rotation_step <= 12)
+      {
+         if (letter_type == ELT_O)
+         {
+            SelectObject(hdc, Letter_Pen);
+            Ellipse(hdc, 0 + 5 * Global_Scale, (-5 * Global_Scale) / 2, 0 + 10 * Global_Scale, 5 * Global_Scale / 2);
+         }
+      }
+
+
+      SetWorldTransform(hdc, &Old_xForm);
+   }
+
+
+   
+}
+//-------------------------------------------------------------------------------------------------------------------------
 // Відмалювання рімня гри
 void Draw_Level(HDC hdc)
 {
@@ -131,7 +263,13 @@ void Draw_Platform(HDC hdc, int x = 50, int y = 100)
 void Draw_Frame(HDC hdc)
 {
  
-   Draw_Level(hdc);
+   //Draw_Level(hdc);
    
-   Draw_Platform(hdc);
+   //Draw_Platform(hdc);
+   for (int i = 0; i < 16; i++)
+   {
+      Draw_Brick_Letter(hdc, 20 + i * Cell_Width * Global_Scale, 100, EBT_Blue, ELT_O,  i);
+      Draw_Brick_Letter(hdc, 20 + i * Cell_Width * Global_Scale, 130, EBT_Red, ELT_O,  i);
+   }
+      
 }
