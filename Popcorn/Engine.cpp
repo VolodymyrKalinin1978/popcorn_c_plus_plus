@@ -9,15 +9,17 @@ enum ELetter_Type
    ELT_O
 };
 
-enum EBrick_type
+enum EBrick_Type
 {
    EBT_None,
    EBT_Red,
    EBT_Blue
 };
 
-HPEN  Brick_Red_Pen, Brick_Blue_Pen, Platform_Circle_Pen, Platform_Inner_Pen, High_Light_Pen, Letter_Pen;
-HBRUSH Brick_Red_Brush, Brick_Blue_Brush, Platform_Circle_Brush, Platform_Inner_Brush ;
+
+HWND Hwnd;
+HPEN  BG_Pen, Brick_Red_Pen, Brick_Blue_Pen, Platform_Circle_Pen, Platform_Inner_Pen, High_Light_Pen, Letter_Pen;
+HBRUSH BG_Brush ,Brick_Red_Brush, Brick_Blue_Brush, Platform_Circle_Brush, Platform_Inner_Brush ;
 
 const int Global_Scale = 3;// Глобальна змінна маштабування гри
 const int Brick_Width = 15;
@@ -26,9 +28,21 @@ const int Cell_Width = 16;
 const int Cell_Height = 8;
 const int Level_X_Offset = 8;
 const int Level_Y_Offset = 6;
+const int Level_Width = 14; // Ширина рівня в ячейках
+const int Level_Height = 12; // Ширина рівня в ячейках
 const int Circle_Size = 7;
+const int Platform_Y_Pos = 185;
+const int Platform_Height = 7;
 
 int Inner_Width = 21;
+
+
+int Platform_X_Pos = 0;
+int Platform_X_Step =  Global_Scale;
+int Platform_Width = 28;
+
+RECT Platform_Rect, Prev_Platform_Rect;
+RECT Level_Rect;
 
 char Level_01[14][12] =
 {
@@ -55,20 +69,42 @@ void Create_Pen_Brush(unsigned char r, unsigned char g, unsigned char b, HPEN &p
 
 }
 //-------------------------------------------------------------------------------------------------------------------------
-void Init()
-{ 
-   High_Light_Pen = CreatePen(PS_SOLID, 0, RGB(255, 255, 255));
+void Redraw_Platform()
+{
+   Prev_Platform_Rect = Platform_Rect;
 
+   Platform_Rect.left = (Level_X_Offset + Platform_X_Pos) * Global_Scale;
+   Platform_Rect.top = Platform_Y_Pos * Global_Scale;
+   Platform_Rect.right = Platform_Rect.left + Platform_Width * Global_Scale;
+   Platform_Rect.bottom = Platform_Rect.top + Platform_Height * Global_Scale;
+
+   InvalidateRect(Hwnd,  &Prev_Platform_Rect, FALSE);
+   InvalidateRect(Hwnd,  &Platform_Rect, FALSE);
+}
+//-------------------------------------------------------------------------------------------------------------------------
+void Init_Engine(HWND hwnd)
+{ 
+   Hwnd = hwnd;
+   High_Light_Pen = CreatePen(PS_SOLID, 0, RGB(255, 255, 255));
+   Letter_Pen = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+
+   Create_Pen_Brush(15,63,31, BG_Pen, BG_Brush);
    Create_Pen_Brush(255, 85, 85, Brick_Red_Pen, Brick_Red_Brush);
    Create_Pen_Brush(85, 255, 255, Brick_Blue_Pen, Brick_Blue_Brush );
    Create_Pen_Brush(151, 0, 0, Platform_Circle_Pen, Platform_Circle_Brush);
    Create_Pen_Brush(0, 128, 192, Platform_Inner_Pen, Platform_Inner_Brush);
-  
+
+   Level_Rect.left = Level_X_Offset * Global_Scale;
+   Level_Rect.top = Level_Y_Offset * Global_Scale;
+   Level_Rect.right = (Level_Rect.left + Cell_Width) * Level_Width * Global_Scale;
+   Level_Rect.bottom = (Level_Rect.top + Cell_Height) * Level_Height * Global_Scale;
+
+   Redraw_Platform();
 }
 
 //-------------------------------------------------------------------------------------------------------------------------
 // Відмалювання цеглинки у  грі
-void Draw_Brick(HDC hdc, int x, int y, EBrick_type brick_color)
+void Draw_Brick(HDC hdc, int x, int y, EBrick_Type brick_color)
 {
    HPEN  pen;
    HBRUSH brush ;
@@ -121,7 +157,7 @@ void Set_Brick_Letter_Color(bool is_switch_color, HPEN &front_pen, HBRUSH &front
 }
 //-------------------------------------------------------------------------------------------------------------------------
 // Відмалювання падаючої букви
-void Draw_Brick_Letter(HDC hdc,int x, int y, EBrick_type brick_type, ELetter_Type letter_type, int rotation_step)
+void Draw_Brick_Letter(HDC hdc,int x, int y, EBrick_Type brick_type, ELetter_Type letter_type, int rotation_step)
 {
    bool switch_color;
    double offset;
@@ -228,14 +264,19 @@ void Draw_Level(HDC hdc)
 
    for (i = 0; i < 14; i++)
       for (j = 0; j < 12; j++)
-         Draw_Brick(hdc, Level_X_Offset + j * Cell_Width, Level_Y_Offset + i * Cell_Height, (EBrick_type)Level_01[i][j]);
+         Draw_Brick(hdc, Level_X_Offset + j * Cell_Width, Level_Y_Offset + i * Cell_Height, (EBrick_Type)Level_01[i][j]);
 }
 //-------------------------------------------------------------------------------------------------------------------------
 // Відмалювання платформи у грі
 void Draw_Platform(HDC hdc, int x = 50, int y = 100)
 {
  
-   
+   // Очистка пдатформи
+
+   SelectObject(hdc, BG_Pen);
+   SelectObject(hdc, BG_Brush);
+   Rectangle(hdc, Prev_Platform_Rect.left, Prev_Platform_Rect.top, Prev_Platform_Rect.right, Prev_Platform_Rect.bottom);
+
    // 1. Малюємо бокові кульки
    SelectObject(hdc, Platform_Circle_Pen);
    SelectObject(hdc, Platform_Circle_Brush);
@@ -260,16 +301,42 @@ void Draw_Platform(HDC hdc, int x = 50, int y = 100)
 }
 //-------------------------------------------------------------------------------------------------------------------------
 // Відмалювання екрану гри
-void Draw_Frame(HDC hdc)
+void Draw_Frame(HDC hdc, RECT &paint_area)
 {
- 
-   //Draw_Level(hdc);
-   
-   //Draw_Platform(hdc);
-   for (int i = 0; i < 16; i++)
+   RECT intersection_rect;
+      if (IntersectRect(&intersection_rect, &paint_area, &Level_Rect))
+          Draw_Level(hdc);
+
+      if (IntersectRect(&intersection_rect, &paint_area, &Platform_Rect))
+           Draw_Platform(hdc,Level_X_Offset + Platform_X_Pos, Platform_Y_Pos);
+   /*for (int i = 0; i < 16; i++)
    {
       Draw_Brick_Letter(hdc, 20 + i * Cell_Width * Global_Scale, 100, EBT_Blue, ELT_O,  i);
       Draw_Brick_Letter(hdc, 20 + i * Cell_Width * Global_Scale, 130, EBT_Red, ELT_O,  i);
-   }
+   }*/
       
 }
+
+//-------------------------------------------------------------------------------------------------------------------------
+int On_Key_Down(EKey_Type key_type)
+{
+   switch (key_type)
+   {
+   case EKT_Left:
+      Platform_X_Pos -= Platform_X_Step;
+      Redraw_Platform();
+      break;
+
+   case EKT_Right:
+      Platform_X_Pos += Platform_X_Step;
+      Redraw_Platform();
+      break;
+
+   case EKT_Space:
+      break;
+  
+   }
+
+   return 0;
+ }
+//-------------------------------------------------------------------------------------------------------------------------
