@@ -1,7 +1,7 @@
 ﻿#include "Level.h"
 
 
-char Level_01[AsConfig::Level_Height][AsConfig::Level_Width] =
+char ALevel::Level_01[AsConfig::Level_Height][AsConfig::Level_Width] =
 {
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -18,6 +18,8 @@ char Level_01[AsConfig::Level_Height][AsConfig::Level_Width] =
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
+
+
 
 // ALevel
 // ------------------------------------------------------------------------------------------------------------------------
@@ -71,17 +73,20 @@ void  ALevel::Check_Level_Brick_Hit(int &next_y_pos, double &ball_direction)
 
 //-------------------------------------------------------------------------------------------------------------------------
 // Відмалювання рімня гри
-void ALevel::Draw(HDC hdc, RECT &paint_area)
+void ALevel::Draw(HWND hwnd, HDC hdc, RECT &paint_area)
 {
    int i, j;
 
    RECT intersection_rect;
+  
    if (!IntersectRect(&intersection_rect, &paint_area, &Level_Rect))
       return;
 
    for (i = 0; i < AsConfig::Level_Height; i++)
       for (j = 0; j < AsConfig::Level_Width; j++)
          Draw_Brick(hdc, AsConfig::Level_X_Offset + j * AsConfig::Cell_Width, AsConfig::Level_Y_Offset + i * AsConfig::Cell_Height, (EBrick_Type)Level_01[i][j]);
+
+   Active_Brick.Draw(hdc, paint_area);
 }
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -114,7 +119,7 @@ void ALevel::Draw_Brick(HDC hdc, int x, int y, EBrick_Type brick_color)
    SelectObject(hdc, brush);
 
    RoundRect(hdc, x * AsConfig::Global_Scale, y * AsConfig::Global_Scale,
-      (x + ALevel::Brick_Width) * AsConfig::Global_Scale, (y + ALevel::Brick_Height) * AsConfig::Global_Scale,
+      (x + AsConfig::Brick_Width) * AsConfig::Global_Scale, (y + AsConfig::Brick_Height) * AsConfig::Global_Scale,
       2 * AsConfig::Global_Scale, 2 * AsConfig::Global_Scale);
 }
 
@@ -148,7 +153,7 @@ void ALevel::Draw_Brick_Letter(HDC hdc,int x, int y, EBrick_Type brick_type, ELe
    bool switch_color;
    double offset;
    double rotation_angle;// Перетворення кроку у кут повороту
-   int brick_half_heght = (Brick_Height * AsConfig::Global_Scale / 2);
+   int brick_half_heght = (AsConfig::Brick_Height * AsConfig::Global_Scale / 2);
    int beck_part_offset;
    HPEN front_pen, back_pen;
    HBRUSH front_brush, back_brush;
@@ -189,13 +194,13 @@ void ALevel::Draw_Brick_Letter(HDC hdc,int x, int y, EBrick_Type brick_type, ELe
       SelectObject(hdc, back_pen);
       SelectObject(hdc, back_brush);
 
-      Rectangle(hdc, x, y + brick_half_heght - AsConfig::Global_Scale,x + Brick_Width * AsConfig::Global_Scale,y + brick_half_heght);
+      Rectangle(hdc, x, y + brick_half_heght - AsConfig::Global_Scale,x + AsConfig::Brick_Width * AsConfig::Global_Scale,y + brick_half_heght);
 
       // Вивотими передній план
       SelectObject(hdc, front_pen);
       SelectObject(hdc, front_brush);
 
-      Rectangle(hdc, x, y + brick_half_heght, x + Brick_Width * AsConfig::Global_Scale, y + brick_half_heght + AsConfig::Global_Scale - 1);
+      Rectangle(hdc, x, y + brick_half_heght, x + AsConfig::Brick_Width * AsConfig::Global_Scale, y + brick_half_heght + AsConfig::Global_Scale - 1);
    }
    else
    {
@@ -218,13 +223,13 @@ void ALevel::Draw_Brick_Letter(HDC hdc,int x, int y, EBrick_Type brick_type, ELe
       SelectObject(hdc, back_pen);
       SelectObject(hdc, back_brush);
 
-      Rectangle(hdc, 0, -brick_half_heght - beck_part_offset, Brick_Width * AsConfig::Global_Scale, brick_half_heght - beck_part_offset);
+      Rectangle(hdc, 0, -brick_half_heght - beck_part_offset, AsConfig::Brick_Width * AsConfig::Global_Scale, brick_half_heght - beck_part_offset);
 
       // Вивотими передній план
       SelectObject(hdc, front_pen);
       SelectObject(hdc, front_brush);
 
-      Rectangle(hdc, 0, -brick_half_heght, Brick_Width * AsConfig::Global_Scale, brick_half_heght);
+      Rectangle(hdc, 0, -brick_half_heght, AsConfig::Brick_Width * AsConfig::Global_Scale, brick_half_heght);
 
       if (rotation_step > 4 && rotation_step <= 12)
       {
